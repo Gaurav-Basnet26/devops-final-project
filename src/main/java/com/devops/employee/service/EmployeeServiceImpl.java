@@ -2,37 +2,33 @@ package com.devops.employee.service;
 
 import com.devops.employee.entity.Employee;
 import com.devops.employee.exception.EmployeeNotFoundException;
+import com.devops.employee.repository.EmployeeRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
 
-    private final List<Employee> employees = new ArrayList<>();
-    private Long nextId = 1L;
+    private final EmployeeRepository employeeRepository;
+
+    public EmployeeServiceImpl(EmployeeRepository employeeRepository) {
+        this.employeeRepository = employeeRepository;
+    }
 
     @Override
     public Employee saveEmployee(Employee employee) {
-
-        employee.setId(nextId++);
-        employees.add(employee);
-
-        return employee;
+        return employeeRepository.save(employee);
     }
 
     @Override
     public List<Employee> getAllEmployees() {
-        return employees;
+        return employeeRepository.findAll();
     }
 
     @Override
     public Employee getEmployeeById(Long id) {
-
-        return employees.stream()
-                .filter(employee -> employee.getId().equals(id))
-                .findFirst()
+        return employeeRepository.findById(id)
                 .orElseThrow(() ->
                         new EmployeeNotFoundException("Employee not found with id: " + id));
     }
@@ -48,7 +44,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         existingEmployee.setDepartment(employee.getDepartment());
         existingEmployee.setSalary(employee.getSalary());
 
-        return existingEmployee;
+        return employeeRepository.save(existingEmployee);
     }
 
     @Override
@@ -56,6 +52,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Employee employee = getEmployeeById(id);
 
-        employees.remove(employee);
+        employeeRepository.delete(employee);
     }
 }
