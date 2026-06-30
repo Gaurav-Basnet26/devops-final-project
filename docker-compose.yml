@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: employee
       POSTGRES_PASSWORD: employee123
     ports:
-      - "15433:5432"
+      - "5051:80"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
