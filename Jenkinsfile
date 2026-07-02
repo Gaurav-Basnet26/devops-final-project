@@ -27,23 +27,19 @@ pipeline {
                 sh 'mvn test'
             }
         }
-stage('SonarQube Debug') {
-    steps {
-        withSonarQubeEnv('SonarQube') {
-            sh '''
-                echo "===== SONAR VARIABLES ====="
-                echo "SONAR_HOST_URL=$SONAR_HOST_URL"
 
-                if [ -z "$SONAR_AUTH_TOKEN" ]; then
-                    echo "SONAR_AUTH_TOKEN is EMPTY"
-                else
-                    echo "SONAR_AUTH_TOKEN exists"
-                    echo "Length: ${#SONAR_AUTH_TOKEN}"
-                fi
-            '''
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                        mvn clean verify sonar:sonar \
+                        -Dsonar.login=$SONAR_AUTH_TOKEN \
+                        -Dsonar.projectKey=employee-management
+                    '''
+                }
+            }
         }
-    }
-}
+
         stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
