@@ -28,18 +28,21 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        mvn clean verify sonar:sonar \
-                        -Dsonar.login=$SONAR_AUTH_TOKEN \
-                        -Dsonar.projectKey=employee-management
-                    '''
-                }
-            }
+stage('SonarQube Analysis') {
+    steps {
+        withCredentials([string(
+            credentialsId: 'sonarqube-token',
+            variable: 'SONAR_TOKEN'
+        )]) {
+            sh '''
+                mvn sonar:sonar \
+                  -Dsonar.host.url=http://localhost:9000 \
+                  -Dsonar.login=$SONAR_TOKEN \
+                  -Dsonar.projectKey=employee-management
+            '''
         }
-
+    }
+}
         stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
