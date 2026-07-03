@@ -27,17 +27,11 @@ pipeline {
                 sh 'mvn test'
             }
         }
-
 stage('SonarQube Analysis') {
     steps {
-        withCredentials([string(
-            credentialsId: 'sonarqube-token',
-            variable: 'SONAR_TOKEN'
-        )]) {
+        withSonarQubeEnv('SonarQube') {
             sh '''
-                mvn sonar:sonar \
-                  -Dsonar.host.url=http://localhost:9000 \
-                  -Dsonar.login=$SONAR_TOKEN \
+                mvn clean verify sonar:sonar \
                   -Dsonar.projectKey=employee-management
             '''
         }
