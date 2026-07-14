@@ -1,0 +1,20 @@
+pipeline {
+
+    agent any
+
+    stages {
+
+        stage('Deploy Started') {
+            steps {
+                echo 'Deploy pipeline triggered successfully!'
+            }
+        }
+
+    }
+
+    post {
+        success {
+            echo 'Deployment pipeline finished.'
+        }
+    }
+}
