@@ -91,8 +91,10 @@ stage('SonarQube Analysis') {
     steps {
         build job: 'employee-deploy',
               wait: true
-    }
+     }
+  }
 }
+
     post {
         success {
             echo 'Pipeline completed successfully!'
