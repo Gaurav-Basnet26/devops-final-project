@@ -67,6 +67,16 @@ stage('SonarQube Analysis') {
             }
         }
 
+stage('Trivy Image Scan') {
+    steps {
+        sh '''
+            trivy image \
+            --severity HIGH,CRITICAL \
+            --exit-code 0 \
+            gaurav0426/employee-management:latest
+        '''
+    }
+}
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(
