@@ -2,11 +2,39 @@ pipeline {
 
     agent any
 
+    environment {
+        PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    }
+
     stages {
 
-        stage('Deploy Started') {
+        stage('Checkout') {
             steps {
-                echo 'Deploy pipeline triggered successfully!'
+                checkout scm
+            }
+        }
+
+        stage('OpenTofu Init') {
+            steps {
+                dir('terraform') {
+                    sh 'tofu init'
+                }
+            }
+        }
+
+        stage('OpenTofu Validate') {
+            steps {
+                dir('terraform') {
+                    sh 'tofu validate'
+                }
+            }
+        }
+
+        stage('OpenTofu Plan') {
+            steps {
+                dir('terraform') {
+                    sh 'tofu plan'
+                }
             }
         }
 
@@ -14,7 +42,11 @@ pipeline {
 
     post {
         success {
-            echo 'Deployment pipeline finished.'
+            echo 'Infrastructure validation completed successfully!'
+        }
+
+        failure {
+            echo 'Infrastructure validation failed!'
         }
     }
 }
