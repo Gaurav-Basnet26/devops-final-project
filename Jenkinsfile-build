@@ -4,8 +4,11 @@ pipeline {
 
     environment {
         PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
         IMAGE_NAME = "gaurav0426/employee-management"
         IMAGE_TAG = "${BUILD_NUMBER}"
+
+        LOCAL_REGISTRY = "localhost:5001"
     }
 
     stages {
@@ -27,16 +30,18 @@ pipeline {
                 sh 'mvn test'
             }
         }
-stage('SonarQube Analysis') {
-    steps {
-        withSonarQubeEnv('SonarQube') {
-            sh '''
-                mvn clean verify sonar:sonar \
-                  -Dsonar.projectKey=employee-management
-            '''
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                        mvn clean verify sonar:sonar \
+                        -Dsonar.projectKey=employee-management
+                    '''
+                }
+            }
         }
-    }
-}
+
         stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
@@ -47,7 +52,7 @@ stage('SonarQube Analysis') {
 
         stage('Package') {
             steps {
-                sh 'mvn package -DskipTests'
+                sh 'mvn clean package -DskipTests'
             }
         }
 
@@ -67,24 +72,45 @@ stage('SonarQube Analysis') {
             }
         }
 
-stage('Trivy Image Scan') {
-    steps {
-        sh '''
-            trivy image \
-            --severity HIGH,CRITICAL \
-            --exit-code 0 \
-            gaurav0426/employee-management:latest
-        '''
-    }
-}
-        stage('Push Docker Image') {
+        stage('Trivy Image Scan') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
+                sh '''
+                    trivy image \
+                    --severity HIGH,CRITICAL \
+                    --exit-code 0 \
+                    ${IMAGE_NAME}:latest
+                '''
+            }
+        }
 
+        stage('Tag for Local Registry') {
+            steps {
+                sh '''
+                    docker tag \
+                    ${IMAGE_NAME}:latest \
+                    ${LOCAL_REGISTRY}/employee-management:latest
+                '''
+            }
+        }
+
+        stage('Push to Local Registry') {
+            steps {
+                sh '''
+                    docker push \
+                    ${LOCAL_REGISTRY}/employee-management:latest
+                '''
+            }
+        }
+
+        stage('Push Docker Hub Image') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
                     sh '''
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
 
@@ -97,21 +123,29 @@ stage('Trivy Image Scan') {
             }
         }
 
-   stage('Trigger Deploy Pipeline') {
-    steps {
-        build job: 'employee-deploy',
-              wait: true
-     }
-  }
-}
+        stage('Trigger Deploy Pipeline') {
+            steps {
+                build job: 'employee-deploy',
+                    wait: true,
+                    parameters: [
+                        string(name: 'IMAGE_TAG', value: "${IMAGE_TAG}")
+                    ]
+            }
+        }
+    }
 
     post {
+
         success {
             echo 'Pipeline completed successfully!'
         }
 
         failure {
             echo 'Pipeline failed!'
+        }
+
+        always {
+            cleanWs()
         }
     }
 }
