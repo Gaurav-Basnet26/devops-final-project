@@ -14,47 +14,36 @@ pipeline {
             }
         }
 
-        stage('OpenTofu Init') {
+        stage('Verify Ansible') {
             steps {
-                dir('terraform') {
-                    sh 'tofu init'
+                dir('ansible') {
+                    sh 'ansible --version'
+                    sh 'ansible all -i inventory.ini -m ping'
                 }
             }
         }
 
-        stage('OpenTofu Validate') {
+        stage('Deploy Application') {
             steps {
-                dir('terraform') {
-                    sh 'tofu validate'
+                dir('ansible') {
+                    sh 'ansible-playbook -i inventory.ini deploy.yml'
                 }
             }
         }
-
-        stage('OpenTofu Plan') {
-            steps {
-                dir('terraform') {
-                    sh 'tofu plan'
-                }
-            }
-        }
-
-        stage('OpenTofu Apply') {
-            steps {
-                dir('terraform') {
-                    sh 'tofu apply -auto-approve'
-                }
-            }
-        }
-
     }
 
     post {
+
         success {
-            echo 'Infrastructure created successfully!'
+            echo 'Application deployed successfully!'
         }
 
         failure {
-            echo 'Infrastructure deployment failed!'
+            echo 'Application deployment failed!'
+        }
+
+        always {
+            cleanWs()
         }
     }
 }
