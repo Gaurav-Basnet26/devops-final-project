@@ -1,1 +1,15 @@
+# OpenTofu / Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+
+# Keep or ignore the lock file (either is acceptable)
+# .terraform.lock.hcl
+
+# Maven
 target/
+
+# macOS
+.DS_Store
