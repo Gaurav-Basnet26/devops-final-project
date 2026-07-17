@@ -62,13 +62,30 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build & Push Docker Image') {
             steps {
-                sh '''
-                    docker build \
-                    -t ${IMAGE_NAME}:${IMAGE_TAG} \
-                    -t ${IMAGE_NAME}:latest .
-                '''
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+
+                        docker buildx create --name mybuilder --use || true
+                        docker buildx inspect --bootstrap
+
+                        docker buildx build \
+                            --platform linux/amd64 \
+                            -t ${IMAGE_NAME}:${IMAGE_TAG} \
+                            -t ${IMAGE_NAME}:latest \
+                            --push .
+
+                        docker logout
+                    '''
+                }
             }
         }
 
@@ -86,6 +103,8 @@ pipeline {
         stage('Tag for Local Registry') {
             steps {
                 sh '''
+                    docker pull ${IMAGE_NAME}:latest
+
                     docker tag \
                     ${IMAGE_NAME}:latest \
                     ${LOCAL_REGISTRY}/employee-management:latest
@@ -99,27 +118,6 @@ pipeline {
                     docker push \
                     ${LOCAL_REGISTRY}/employee-management:latest
                 '''
-            }
-        }
-
-        stage('Push Docker Hub Image') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )
-                ]) {
-                    sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-
-                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
-                        docker push ${IMAGE_NAME}:latest
-
-                        docker logout
-                    '''
-                }
             }
         }
 
