@@ -8,7 +8,7 @@ pipeline {
         IMAGE_NAME = "gaurav0426/employee-management"
         IMAGE_TAG = "${BUILD_NUMBER}"
 
-        LOCAL_REGISTRY = "localhost:5001"
+        LOCAL_REGISTRY = "192.168.56.10:5000"
     }
 
     stages {
@@ -78,7 +78,7 @@ pipeline {
                         docker buildx inspect --bootstrap
 
                         docker buildx build \
-                            --platform linux/amd64 \
+                            --platform linux/amd64,linux/arm64 \
                             -t ${IMAGE_NAME}:${IMAGE_TAG} \
                             -t ${IMAGE_NAME}:latest \
                             --push .
@@ -93,9 +93,9 @@ pipeline {
             steps {
                 sh '''
                     trivy image \
-                    --severity HIGH,CRITICAL \
-                    --exit-code 0 \
-                    ${IMAGE_NAME}:latest
+                        --severity HIGH,CRITICAL \
+                        --exit-code 0 \
+                        ${IMAGE_NAME}:latest
                 '''
             }
         }
@@ -106,8 +106,8 @@ pipeline {
                     docker pull ${IMAGE_NAME}:latest
 
                     docker tag \
-                    ${IMAGE_NAME}:latest \
-                    ${LOCAL_REGISTRY}/employee-management:latest
+                        ${IMAGE_NAME}:latest \
+                        ${LOCAL_REGISTRY}/employee-management:latest
                 '''
             }
         }
@@ -116,7 +116,7 @@ pipeline {
             steps {
                 sh '''
                     docker push \
-                    ${LOCAL_REGISTRY}/employee-management:latest
+                        ${LOCAL_REGISTRY}/employee-management:latest
                 '''
             }
         }
