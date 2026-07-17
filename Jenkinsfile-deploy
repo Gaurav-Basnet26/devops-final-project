@@ -38,15 +38,23 @@ pipeline {
             }
         }
 
+        stage('OpenTofu Apply') {
+            steps {
+                dir('terraform') {
+                    sh 'tofu apply -auto-approve'
+                }
+            }
+        }
+
     }
 
     post {
         success {
-            echo 'Infrastructure validation completed successfully!'
+            echo 'Infrastructure created successfully!'
         }
 
         failure {
-            echo 'Infrastructure validation failed!'
+            echo 'Infrastructure deployment failed!'
         }
     }
 }
