@@ -8,7 +8,7 @@ pipeline {
         IMAGE_NAME = "gaurav0426/employee-management"
         IMAGE_TAG = "${BUILD_NUMBER}"
 
-        LOCAL_REGISTRY = "192.168.56.10:5000"
+        LOCAL_REGISTRY = "localhost:5001"
     }
 
     stages {
@@ -99,7 +99,13 @@ pipeline {
                 '''
             }
         }
-
+        stage('Verify Local Registry') {
+    steps {
+        sh '''
+            curl http://${LOCAL_REGISTRY}/v2/
+        '''
+    }
+}
         stage('Tag for Local Registry') {
             steps {
                 sh '''
